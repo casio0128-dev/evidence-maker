@@ -50,7 +50,7 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 			}()
 
 			name := fmt.Sprintf(_const.OutputExcelPattern, strings.Join([]string{dirPath, bookName}, string(os.PathSeparator)))
-			book, err := OpenExcel(name)
+			book, err := OpenExcel(cf.TemplatePath)
 			if err != nil {
 				panic(err)
 			}
@@ -71,8 +71,9 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 
 			for _, sheetName := range sheetNames {
 				imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
-				book.NewSheet(sheetName)
-
+				if !IsExistSheetName(book, sheetName) {
+					book.NewSheet(sheetName)
+				}
 				if err := PastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
 					panic(err)
 				}
@@ -84,6 +85,15 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 		}(bn)
 	}
 	return nil
+}
+
+func IsExistSheetName(book *excelize.File, name string) bool {
+	for _, sheetName := range book.GetSheetList() {
+		if strings.EqualFold(sheetName, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func PastePictures(file *excelize.File, path, sheetName, targetCol string, targetRow, imageOffset int) error {
