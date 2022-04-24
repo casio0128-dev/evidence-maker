@@ -2,5 +2,8 @@
   "targetCol": "B",
   "targetStartRow": 2,
   "offset": 1,
-  "template": "template.xlsx"
+  "template": {
+    "file": "",
+    "sheet": ""
+  }
 }

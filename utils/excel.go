@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 /*
@@ -28,7 +29,7 @@ func OpenExcel(filePath string) (evd *excelize.File, err error) {
 }
 
 func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
-	dirPath, err := os.MkdirTemp(_const.OutputDirectory, _const.OutputDirectoryPattern)
+	dirPath, err := os.MkdirTemp(_const.OutputDirectory, time.Now().Format(_const.OutputDirectoryPattern))
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 			}()
 
 			name := fmt.Sprintf(_const.OutputExcelPattern, strings.Join([]string{dirPath, bookName}, string(os.PathSeparator)))
-			book, err := OpenExcel(cf.TemplatePath)
+			book, err := OpenExcel(cf.Template.FilePath)
 			if err != nil {
 				panic(err)
 			}
@@ -73,6 +74,11 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 				imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
 				if !IsExistSheetName(book, sheetName) {
 					book.NewSheet(sheetName)
+					if cf.Template.IsSheetSpecification() {
+						if err := book.CopySheet(book.GetSheetIndex(cf.Template.SheetName), book.GetSheetIndex(sheetName)); err != nil {
+							panic(err)
+						}
+					}
 				}
 				if err := PastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
 					panic(err)
