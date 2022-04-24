@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"image"
 	"math"
 	"os"
 )
@@ -40,4 +41,22 @@ func GetDirNames(path string, skipCondition func(entry os.DirEntry) bool) ([]str
 		result = append(result, dir.Name())
 	}
 	return result, nil
+}
+
+func GetImageSize(path string) (height, width int, err error) {
+	pict, err := os.Open(path)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	img, _, err := image.Decode(pict)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	bound := img.Bounds()
+	height = bound.Max.Y
+	width = bound.Max.X
+
+	return height, width, nil
 }

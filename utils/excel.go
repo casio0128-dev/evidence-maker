@@ -5,7 +5,6 @@ import (
 	_const "evidence-maker/const"
 	"fmt"
 	"github.com/xuri/excelize/v2"
-	"image"
 	"os"
 	"strings"
 	"sync"
@@ -122,23 +121,18 @@ func PastePictures(file *excelize.File, path, sheetName, targetCol string, targe
 			return err
 		}
 
-		pict, err := os.Open(picture)
-		if err != nil {
-			return err
-		}
-
-		img, _, err := image.Decode(pict)
-		if err != nil {
-			return err
-		}
-
 		rowHeightPoint, err := file.GetRowHeight(sheetName, 1)
 		if err != nil {
 			return err
 		}
 
+		imgHeight, _, err := GetImageSize(picture)
+		if err != nil {
+			return err
+		}
+
 		rowHeightPixel := Point2Pixel(rowHeightPoint)
-		currentRow += int(RoundUp(float64(img.Bounds().Max.Y)/rowHeightPixel, 0)) + imageOffset
+		currentRow += int(RoundUp(float64(imgHeight)/rowHeightPixel, 0)) + imageOffset
 	}
 	return nil
 }
