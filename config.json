@@ -1,5 +1,9 @@
 {
   "targetCol": "B",
   "targetStartRow": 2,
-  "offset": 1
+  "offset": 1,
+  "template": {
+    "file": "",
+    "sheet": ""
+  }
 }
