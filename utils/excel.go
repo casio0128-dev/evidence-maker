@@ -5,10 +5,10 @@ import (
 	_const "evidence-maker/const"
 	"fmt"
 	"github.com/xuri/excelize/v2"
-	"image"
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 /*
@@ -16,8 +16,8 @@ import (
 	・指定したパスにエクセルファイルがあれば、そのポインタを返却する
 	・指定したパスにエクセルファイルがなければ、新規にファイルポインタを作成し返却する。
 */
-func OpenExcel(filePath string) (evd *excelize.File, err error) {
-	if IsExist(filePath) {
+func openExcel(filePath string) (evd *excelize.File, err error) {
+	if isExist(filePath) {
 		if evd, err = excelize.OpenFile(filePath); err != nil {
 			return
 		}
@@ -28,11 +28,11 @@ func OpenExcel(filePath string) (evd *excelize.File, err error) {
 }
 
 func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
-	dirPath, err := os.MkdirTemp(_const.OutputDirectory, _const.OutputDirectoryPattern)
+	dirPath, err := os.MkdirTemp(_const.OutputDirectory, time.Now().Format(_const.OutputDirectoryPattern))
 	if err != nil {
 		return err
 	}
-	files, err := GetExcelFileNames()
+	files, err := getExcelFileNames()
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 			}()
 
 			name := fmt.Sprintf(_const.OutputExcelPattern, strings.Join([]string{dirPath, bookName}, string(os.PathSeparator)))
-			book, err := OpenExcel(name)
+			book, err := openExcel(cf.Template.FilePath)
 			if err != nil {
 				panic(err)
 			}
@@ -64,16 +64,22 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 				}
 			}(book)
 
-			sheetNames, err := GetSheetNames(bookName)
+			sheetNames, err := getSheetNames(bookName)
 			if err != nil {
 				panic(err)
 			}
 
 			for _, sheetName := range sheetNames {
 				imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
-				book.NewSheet(sheetName)
-
-				if err := PastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
+				if !isExistSheetName(book, sheetName) {
+					book.NewSheet(sheetName)
+					if cf.Template.IsSheetSpecification() {
+						if err := book.CopySheet(book.GetSheetIndex(cf.Template.SheetName), book.GetSheetIndex(sheetName)); err != nil {
+							panic(err)
+						}
+					}
+				}
+				if err := pastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
 					panic(err)
 				}
 			}
@@ -86,8 +92,17 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 	return nil
 }
 
-func PastePictures(file *excelize.File, path, sheetName, targetCol string, targetRow, imageOffset int) error {
-	pictures, err := GetDirNames(path, func(de os.DirEntry) bool {
+func isExistSheetName(book *excelize.File, name string) bool {
+	for _, sheetName := range book.GetSheetList() {
+		if strings.EqualFold(sheetName, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func pastePictures(file *excelize.File, path, sheetName, targetCol string, targetRow, imageOffset int) error {
+	pictures, err := getDirNames(path, func(de os.DirEntry) bool {
 		return de.IsDir()
 	})
 	if err != nil {
@@ -97,7 +112,7 @@ func PastePictures(file *excelize.File, path, sheetName, targetCol string, targe
 	var currentRow = targetRow
 	for _, picture := range pictures {
 		picture = strings.Join([]string{path, picture}, string(os.PathSeparator))
-		if !IsExist(picture) {
+		if !isExist(picture) {
 			continue
 		}
 
@@ -106,36 +121,31 @@ func PastePictures(file *excelize.File, path, sheetName, targetCol string, targe
 			return err
 		}
 
-		pict, err := os.Open(picture)
-		if err != nil {
-			return err
-		}
-
-		img, _, err := image.Decode(pict)
-		if err != nil {
-			return err
-		}
-
 		rowHeightPoint, err := file.GetRowHeight(sheetName, 1)
 		if err != nil {
 			return err
 		}
 
-		rowHeightPixel := Point2Pixel(rowHeightPoint)
-		currentRow += int(RoundUp(float64(img.Bounds().Max.Y)/rowHeightPixel, 0)) + imageOffset
+		imgHeight, _, err := getImageSize(picture)
+		if err != nil {
+			return err
+		}
+
+		rowHeightPixel := point2Pixel(rowHeightPoint)
+		currentRow += int(roundUp(float64(imgHeight)/rowHeightPixel, 0)) + imageOffset
 	}
 	return nil
 }
 
-func GetExcelFileNames() ([]string, error) {
-	return GetDirNames(_const.InputDirectory+string(os.PathSeparator), func(de os.DirEntry) bool {
+func getExcelFileNames() ([]string, error) {
+	return getDirNames(_const.InputDirectory+string(os.PathSeparator), func(de os.DirEntry) bool {
 		// src直下のディレクトリ名がエビデンスファイル名となるため、ディレクトリ以外はスキップ
 		return !de.IsDir()
 	})
 }
 
-func GetSheetNames(path string) ([]string, error) {
-	return GetDirNames(strings.Join([]string{_const.InputDirectory, path}, string(os.PathSeparator)), func(de os.DirEntry) bool {
+func getSheetNames(path string) ([]string, error) {
+	return getDirNames(strings.Join([]string{_const.InputDirectory, path}, string(os.PathSeparator)), func(de os.DirEntry) bool {
 		return !de.IsDir()
 	})
 }
