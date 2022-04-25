@@ -14,7 +14,20 @@ func isExist(path string) bool {
 }
 
 func point2Pixel(point float64) float64 {
-	return point / 0.75
+	return round(point/0.75, 2)
+}
+
+func round(num, places float64) float64 {
+	shift := math.Pow(10, places)
+	return roundInt(num*shift) / shift
+}
+
+func roundInt(num float64) float64 {
+	t := math.Trunc(num)
+	if math.Abs(num-t) >= 0.5 {
+		return t + math.Copysign(1, num)
+	}
+	return t
 }
 
 func roundUp(num, places float64) float64 {
