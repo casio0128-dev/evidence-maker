@@ -27,7 +27,7 @@ func openExcel(filePath string) (evd *excelize.File, err error) {
 	return
 }
 
-func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
+func OutputExcelFile(wg *sync.WaitGroup, cf *conf.Config) error {
 	dirPath, err := os.MkdirTemp(_const.OutputDirectory, time.Now().Format(_const.OutputDirectoryPattern))
 	if err != nil {
 		return err
@@ -69,21 +69,13 @@ func OutputExcelFile(wg *sync.WaitGroup, cf conf.Config) error {
 				panic(err)
 			}
 
+			wg := &sync.WaitGroup{}
 			for _, sheetName := range sheetNames {
 				imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
-				if !isExistSheetName(book, sheetName) {
-					book.NewSheet(sheetName)
-					if cf.Template.IsSheetSpecification() {
-						if err := book.CopySheet(book.GetSheetIndex(cf.Template.SheetName), book.GetSheetIndex(sheetName)); err != nil {
-							panic(err)
-						}
-					}
-				}
-				if err := pastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
-					panic(err)
-				}
+				wg.Add(1)
+				go pastePictureOnSheet(wg, book, cf, imagePath, sheetName)
 			}
-
+			wg.Wait()
 			if err := book.SaveAs(name); err != nil {
 				panic(err)
 			}
@@ -99,6 +91,27 @@ func isExistSheetName(book *excelize.File, name string) bool {
 		}
 	}
 	return false
+}
+
+func pastePictureOnSheet(wg *sync.WaitGroup, book *excelize.File, cf *conf.Config, imagePath, sheetName string) {
+	defer func() {
+		switch recover() {
+		default:
+			wg.Done()
+		}
+	}()
+
+	if !isExistSheetName(book, sheetName) {
+		book.NewSheet(sheetName)
+		if cf.Template.IsSheetSpecification() {
+			if err := book.CopySheet(book.GetSheetIndex(cf.Template.SheetName), book.GetSheetIndex(sheetName)); err != nil {
+				panic(err)
+			}
+		}
+	}
+	if err := pastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
+		panic(err)
+	}
 }
 
 func pastePictures(file *excelize.File, path, sheetName, targetCol string, targetRow, imageOffset int) error {

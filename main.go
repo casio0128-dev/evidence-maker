@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	var c conf.Config
+	var c *conf.Config
 
 	confJSON, err := os.ReadFile("config.json")
 	if err != nil {
