@@ -103,22 +103,22 @@ func pastePictureOnSheet(wg *sync.WaitGroup, book *excelize.File, cf *conf.Confi
 	}
 
 	go func() {
-		defer func() {
-			switch recover() {
-			default:
-				wg.Done()
-			}
-		}()
-
-		imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
-		if err := pastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
+		if err := pastePictures(wg, book, bookName, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
 			panic(err)
 		}
 	}()
 }
 
-func pastePictures(file *excelize.File, path, sheetName, targetCol string, targetRow, imageOffset int) error {
-	pictures, err := getDirNames(path, func(de os.DirEntry) bool {
+func pastePictures(wg *sync.WaitGroup, file *excelize.File, bookName, sheetName, targetCol string, targetRow, imageOffset int) error {
+	defer func() {
+		switch recover() {
+		default:
+			wg.Done()
+		}
+	}()
+
+	imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
+	pictures, err := getDirNames(imagePath, func(de os.DirEntry) bool {
 		return de.IsDir()
 	})
 	if err != nil {
@@ -127,7 +127,7 @@ func pastePictures(file *excelize.File, path, sheetName, targetCol string, targe
 
 	var currentRow = targetRow
 	for _, picture := range pictures {
-		picture = strings.Join([]string{path, picture}, string(os.PathSeparator))
+		picture = strings.Join([]string{imagePath, picture}, string(os.PathSeparator))
 		if !isExist(picture) {
 			continue
 		}
