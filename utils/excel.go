@@ -71,9 +71,8 @@ func OutputExcelFile(wg *sync.WaitGroup, cf *conf.Config) error {
 
 			wg := &sync.WaitGroup{}
 			for _, sheetName := range sheetNames {
-				imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
 				wg.Add(1)
-				go pastePictureOnSheet(wg, book, cf, imagePath, sheetName)
+				pastePictureOnSheet(wg, book, cf, bookName, sheetName)
 			}
 			wg.Wait()
 			if err := book.SaveAs(name); err != nil {
@@ -93,14 +92,7 @@ func isExistSheetName(book *excelize.File, name string) bool {
 	return false
 }
 
-func pastePictureOnSheet(wg *sync.WaitGroup, book *excelize.File, cf *conf.Config, imagePath, sheetName string) {
-	defer func() {
-		switch recover() {
-		default:
-			wg.Done()
-		}
-	}()
-
+func pastePictureOnSheet(wg *sync.WaitGroup, book *excelize.File, cf *conf.Config, bookName, sheetName string) {
 	if !isExistSheetName(book, sheetName) {
 		book.NewSheet(sheetName)
 		if cf.Template.IsSheetSpecification() {
@@ -109,9 +101,20 @@ func pastePictureOnSheet(wg *sync.WaitGroup, book *excelize.File, cf *conf.Confi
 			}
 		}
 	}
-	if err := pastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
-		panic(err)
-	}
+
+	go func() {
+		defer func() {
+			switch recover() {
+			default:
+				wg.Done()
+			}
+		}()
+
+		imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
+		if err := pastePictures(book, imagePath, sheetName, cf.TargetCol, cf.TargetRow, cf.Offset); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 func pastePictures(file *excelize.File, path, sheetName, targetCol string, targetRow, imageOffset int) error {
