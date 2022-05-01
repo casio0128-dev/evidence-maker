@@ -5,6 +5,8 @@ import (
 	"evidence-maker/consts"
 	"fmt"
 	"github.com/xuri/excelize/v2"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"strings"
 	"sync"

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"evidence-maker/conf"
 	"evidence-maker/utils"
-	_ "image/jpeg"
-	_ "image/png"
 	"os"
 	"sync"
 )
