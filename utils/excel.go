@@ -2,7 +2,7 @@ package utils
 
 import (
 	"evidence-maker/conf"
-	_const "evidence-maker/const"
+	"evidence-maker/consts"
 	"fmt"
 	"github.com/xuri/excelize/v2"
 	"os"
@@ -28,7 +28,7 @@ func openExcel(filePath string) (evd *excelize.File, err error) {
 }
 
 func OutputExcelFile(wg *sync.WaitGroup, cf *conf.Config) error {
-	dirPath, err := os.MkdirTemp(_const.OutputDirectory, time.Now().Format(_const.OutputDirectoryPattern))
+	dirPath, err := os.MkdirTemp(consts.OutputDirectory, time.Now().Format(consts.OutputDirectoryPattern))
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func OutputExcelFile(wg *sync.WaitGroup, cf *conf.Config) error {
 				}
 			}()
 
-			name := fmt.Sprintf(_const.OutputExcelPattern, strings.Join([]string{dirPath, bookName}, string(os.PathSeparator)))
+			name := fmt.Sprintf(consts.OutputExcelPattern, strings.Join([]string{dirPath, bookName}, string(os.PathSeparator)))
 			book, err := openExcel(cf.Template.FilePath)
 			if err != nil {
 				panic(err)
@@ -117,7 +117,7 @@ func pastePictures(wg *sync.WaitGroup, file *excelize.File, bookName, sheetName,
 		}
 	}()
 
-	imagePath := strings.Join([]string{_const.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
+	imagePath := strings.Join([]string{consts.InputDirectory, bookName, sheetName}, string(os.PathSeparator))
 	pictures, err := getDirNames(imagePath, func(de os.DirEntry) bool {
 		return de.IsDir()
 	})
@@ -133,7 +133,7 @@ func pastePictures(wg *sync.WaitGroup, file *excelize.File, bookName, sheetName,
 		}
 
 		targetCell := fmt.Sprintf("%s%d", targetCol, currentRow)
-		if err := file.AddPicture(sheetName, targetCell, picture, _const.PictureOption); err != nil {
+		if err := file.AddPicture(sheetName, targetCell, picture, consts.PictureOption); err != nil {
 			return err
 		}
 
@@ -154,14 +154,14 @@ func pastePictures(wg *sync.WaitGroup, file *excelize.File, bookName, sheetName,
 }
 
 func getExcelFileNames() ([]string, error) {
-	return getDirNames(_const.InputDirectory+string(os.PathSeparator), func(de os.DirEntry) bool {
+	return getDirNames(consts.InputDirectory+string(os.PathSeparator), func(de os.DirEntry) bool {
 		// src直下のディレクトリ名がエビデンスファイル名となるため、ディレクトリ以外はスキップ
 		return !de.IsDir()
 	})
 }
 
 func getSheetNames(path string) ([]string, error) {
-	return getDirNames(strings.Join([]string{_const.InputDirectory, path}, string(os.PathSeparator)), func(de os.DirEntry) bool {
+	return getDirNames(strings.Join([]string{consts.InputDirectory, path}, string(os.PathSeparator)), func(de os.DirEntry) bool {
 		return !de.IsDir()
 	})
 }

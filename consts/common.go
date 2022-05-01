@@ -1,4 +1,4 @@
-package _const
+package consts
 
 const (
 	OutputExcelPattern     = "%s.xlsx"
