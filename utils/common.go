@@ -19,15 +19,7 @@ func point2Pixel(point float64) float64 {
 
 func round(num, places float64) float64 {
 	shift := math.Pow(10, places)
-	return roundInt(num*shift) / shift
-}
-
-func roundInt(num float64) float64 {
-	t := math.Trunc(num)
-	if math.Abs(num-t) >= 0.5 {
-		return t + math.Copysign(1, num)
-	}
-	return t
+	return math.Round(num*shift) / shift
 }
 
 func roundUp(num, places float64) float64 {
@@ -36,8 +28,7 @@ func roundUp(num, places float64) float64 {
 }
 
 func roundUpInt(num float64) float64 {
-	t := math.Trunc(num)
-	return t + math.Copysign(1, num)
+	return math.Ceil(num)
 }
 
 func getDirNames(path string, skipCondition func(entry os.DirEntry) bool) ([]string, error) {

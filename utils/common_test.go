@@ -67,23 +67,6 @@ func TestRound(t *testing.T) {
 	}
 }
 
-func TestRoundInt(t *testing.T) {
-	patterns := []struct {
-		val, expected float64
-	}{
-		{val: 0.4, expected: 0},
-		{val: 0.5, expected: 1},
-		{val: 0.6, expected: 1},
-	}
-
-	for i, pattern := range patterns {
-		actual := roundInt(pattern.val)
-		if actual != pattern.expected {
-			t.Errorf("patterns[%d] want to %v but %v", i, pattern.expected, actual)
-		}
-	}
-}
-
 func TestRoundUp(t *testing.T) {
 	patterns := []struct {
 		val, digits, expected float64
@@ -97,6 +80,10 @@ func TestRoundUp(t *testing.T) {
 		{val: 0.04, digits: 1, expected: 0.1},
 		{val: 0.05, digits: 1, expected: 0.1},
 		{val: 0.06, digits: 1, expected: 0.1},
+
+		{val: 0.1, digits: 0, expected: 1},
+		{val: 0, digits: 0, expected: 0},
+		{val: 1, digits: 0, expected: 1},
 	}
 
 	for i, pattern := range patterns {
@@ -107,13 +94,13 @@ func TestRoundUp(t *testing.T) {
 	}
 }
 
-// TODO: fix to  0 -> 0, 0.1 -> 1, 1.0 -> 1
 func TestRoundUpInt(t *testing.T) {
 	patterns := []struct {
 		val, expected float64
 	}{
 		{val: 0, expected: 0},
 		{val: 0.1, expected: 1},
+		{val: 1, expected: 1},
 	}
 
 	for i, pattern := range patterns {
