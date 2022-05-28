@@ -40,7 +40,7 @@ func OutputExcelFile(wg *sync.WaitGroup, cf *conf.Config) error {
 	}
 
 	for _, bn := range files {
-		bn = bn
+		bn := bn
 		wg.Add(1)
 		go func(bookName string) {
 			defer func() {
@@ -74,6 +74,7 @@ func OutputExcelFile(wg *sync.WaitGroup, cf *conf.Config) error {
 			wg := &sync.WaitGroup{}
 			for _, sheetName := range sheetNames {
 				wg.Add(1)
+				sheetName := sheetName
 				pastePictureOnSheet(wg, book, cf, bookName, sheetName)
 			}
 			wg.Wait()
@@ -129,7 +130,7 @@ func pastePictures(wg *sync.WaitGroup, file *excelize.File, bookName, sheetName,
 
 	var currentRow = targetRow
 	for _, picture := range pictures {
-		picture = strings.Join([]string{imagePath, picture}, string(os.PathSeparator))
+		picture := strings.Join([]string{imagePath, picture}, string(os.PathSeparator))
 		if !isExist(picture) {
 			continue
 		}
